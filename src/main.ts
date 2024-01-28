@@ -1,12 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
-import * as MongoDBSession from 'connect-mongodb-session';
-import * as passport from 'passport';
-const MongoDBStore = MongoDBSession(session);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.setGlobalPrefix('api');
 
   // Middlewares
   app.use(
@@ -18,15 +17,8 @@ async function bootstrap() {
       cookie: {
         maxAge: 86_400_000,
       },
-      store: new MongoDBStore({
-        uri: 'mongodb://127.0.0.1/sessions',
-        collection: 'dashboard',
-      }),
     }),
   );
-
-  app.use(passport.initialize());
-  app.use(passport.session());
 
   // app.enableCors({
   //   origin: 'http://localhost:6001',

@@ -1,16 +1,29 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { UsersModule } from 'src/user/user.module';
 import { AuthService } from './services/auth.service';
 import { AuthController } from './controllers/auth.controller';
 import { SERVICES } from 'src/utils/constants';
-import { DiscordStrategy } from './utils/strategies';
-import { SessionSerializer } from './utils/serialize';
+import { AuthGuard } from './utils/guards';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Session, SessionSchema } from 'src/schemas/Session.schema';
+import { SessionSerializer } from './services/session.service';
 
 @Module({
-  imports: [UsersModule],
+  imports: [
+    MongooseModule.forFeature([
+      {
+        name: Session.name,
+        schema: SessionSchema,
+      },
+    ]),
+    UsersModule,
+  ],
   providers: [
-    DiscordStrategy,
-    SessionSerializer,
+    AuthGuard,
+    {
+      provide: SERVICES.SERIALIZER,
+      useClass: SessionSerializer,
+    },
     {
       provide: SERVICES.AUTH,
       useClass: AuthService,
@@ -18,4 +31,8 @@ import { SessionSerializer } from './utils/serialize';
   ],
   controllers: [AuthController],
 })
-export class AuthModule {}
+export class AuthModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(SessionSerializer).forRoutes('/');
+  }
+}
