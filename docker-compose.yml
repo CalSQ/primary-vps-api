@@ -1,0 +1,19 @@
+networks:
+  app-network:
+    driver: bridge
+services:
+  api:
+    build: ./api
+    restart: always
+    networks:
+      - app-network
+    volumes:
+      - ./volume:/minecraft
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      - api
