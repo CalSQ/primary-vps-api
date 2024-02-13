@@ -16,5 +16,5 @@ buttonDetails.addEventListener('click', function () {
 });
 
 document.getElementById('button-mods').addEventListener('click', function () {
-  fetch('http://152.53.21.200:80/mods');
+  window.location.href = 'http://152.53.21.200/api/mods';
 });
