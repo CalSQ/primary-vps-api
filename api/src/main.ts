@@ -9,10 +9,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Middlewares
-  // app.enableCors({
-  //   origin: ['http://localhost:6001', 'http://localhost:3001'],
-  //   credentials: true,
-  // });
+  app.enableCors({
+    origin: ['*'],
+    credentials: true,
+  });
 
   try {
     await app.listen(PORT);
