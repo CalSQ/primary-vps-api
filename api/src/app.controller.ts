@@ -1,7 +1,7 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import { Response } from 'express';
 
-@Controller('api')
+@Controller()
 export class AppController {
   @Get()
   visited() {
