@@ -1,6 +1,6 @@
 console.log('WORKING!');
 
-const connectionStr = '152.53.21.200:25565';
+const connectionStr = 'play.istealbabiesfor.fun';
 let debounce = false;
 
 const buttonDetails = document.getElementById('button-details');
@@ -16,5 +16,5 @@ buttonDetails.addEventListener('click', function () {
 });
 
 document.getElementById('button-mods').addEventListener('click', function () {
-  window.location.href = 'http://152.53.21.200/api/mods';
+  window.location.href = 'https://mc.istealbabiesfor.fun/api/mods';
 });
