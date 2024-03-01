@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -8,6 +9,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Middlewares
+  app.use(cookieParser());
+
   app.use(
     session({
       name: 'DISCORD_SESSION',
@@ -20,10 +23,10 @@ async function bootstrap() {
     }),
   );
 
-  // app.enableCors({
-  //   origin: 'http://localhost:6001',
-  //   credentials: true,
-  // });
+  app.enableCors({
+    origin: ['http://localhost:6001', 'http://localhost:3001'],
+    credentials: true,
+  });
 
   try {
     await app.listen(process.env.PORT);

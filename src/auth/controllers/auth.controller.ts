@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  HttpCode,
   HttpException,
   HttpStatus,
   Inject,
@@ -9,12 +10,12 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ROUTES, SERVICES } from 'src/utils/constants';
 import { Request, Response } from 'express';
-import { IAuthService } from '../interfaces/auth';
-import { AuthGuard } from '../utils/guards';
-import { AuthUser } from '../utils/decorators';
 import { UserSession } from 'src/user/types/user';
+import { FRONTEND_ROUTES, ROUTES, SERVICES } from 'src/utils/constants';
+import { IAuthService } from '../interfaces/auth';
+import { AuthUser, SessionID } from '../utils/decorators';
+import { AuthGuard } from '../utils/guards';
 
 @Controller(ROUTES.AUTH)
 export class AuthController {
@@ -23,10 +24,11 @@ export class AuthController {
   ) {}
 
   @Get('login')
-  login(@Res() response: Response) {
-    // Check login state, if authorised redirect to dashboard otherwise OAuth URL
+  login(@AuthUser() user: UserSession, @Res() response: Response) {
     response.redirect(
-      'https://discord.com/api/oauth2/authorize?client_id=1149189404770979840&response_type=code&redirect_uri=http%3A%2F%2F127.0.0.1%3A6001%2Fapi%2Fauth%2Fredirect%2F&scope=identify',
+      user
+        ? process.env.FRONTEND_HOST + FRONTEND_ROUTES.MENU
+        : process.env.DISCORD_OAUTH_REDIRECT,
     );
   }
 
@@ -34,9 +36,7 @@ export class AuthController {
   async redirect(@Req() request: Request, @Res() response: Response) {
     const { code } = request.query;
     if (!code)
-      // Change to /login front end route
       throw new HttpException('No code provided', HttpStatus.BAD_REQUEST);
-
     try {
       await this.authService.authenticateUser(request, code.toString());
     } catch (error: unknown) {
@@ -48,17 +48,31 @@ export class AuthController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-
-    return response.send({ msg: 'Worked' });
+    response.redirect(process.env.FRONTEND_HOST + FRONTEND_ROUTES.MENU);
   }
 
   @Get('status')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
   status(@AuthUser() user: UserSession) {
     const { tokens, ...partialUser } = user;
     return partialUser;
   }
 
-  @Post('logout')
-  logout() {}
+  @Post('revoke')
+  @UseGuards(AuthGuard)
+  async revoke(@AuthUser() user: UserSession, @SessionID() sessionId: string) {
+    try {
+      await this.authService.revokeUser(sessionId, user);
+      return { revoked: true };
+    } catch (error: unknown) {
+      if (error instanceof Error && error.cause === 'Application') {
+        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      }
+      throw new HttpException(
+        'There was a problem.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }

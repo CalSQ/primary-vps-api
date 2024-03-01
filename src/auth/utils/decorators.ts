@@ -7,3 +7,10 @@ export const AuthUser = createParamDecorator(
     return request.user;
   },
 );
+
+export const SessionID = createParamDecorator(
+  (data: unknown, context: ExecutionContext) => {
+    const request = context.switchToHttp().getRequest<Request>();
+    return request.sessionID;
+  },
+);

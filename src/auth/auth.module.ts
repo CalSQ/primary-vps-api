@@ -6,7 +6,7 @@ import { SERVICES } from 'src/utils/constants';
 import { AuthGuard } from './utils/guards';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Session, SessionSchema } from 'src/schemas/Session.schema';
-import { SessionSerializer } from './services/session.service';
+import { SessionService } from './services/session.service';
 
 @Module({
   imports: [
@@ -21,8 +21,8 @@ import { SessionSerializer } from './services/session.service';
   providers: [
     AuthGuard,
     {
-      provide: SERVICES.SERIALIZER,
-      useClass: SessionSerializer,
+      provide: SERVICES.SESSION,
+      useClass: SessionService,
     },
     {
       provide: SERVICES.AUTH,
@@ -33,6 +33,6 @@ import { SessionSerializer } from './services/session.service';
 })
 export class AuthModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(SessionSerializer).forRoutes('/');
+    consumer.apply(SessionService).forRoutes('/');
   }
 }

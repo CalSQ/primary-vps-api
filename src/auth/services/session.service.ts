@@ -1,12 +1,14 @@
-import { NextFunction, Request } from 'express';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as cookieParser from 'cookie-parser';
+import { NextFunction, Request } from 'express';
 import { Model } from 'mongoose';
 import { Session } from 'src/schemas/Session.schema';
-import { Injectable, NestMiddleware } from '@nestjs/common';
 import { UserSession } from 'src/user/types/user';
+import { decryptTokens } from '../utils/helpers';
 
 @Injectable()
-export class SessionSerializer implements NestMiddleware {
+export class SessionService implements NestMiddleware {
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<Session>,
   ) {}
@@ -14,6 +16,7 @@ export class SessionSerializer implements NestMiddleware {
   async serialize(request: Request, userSession: UserSession) {
     request.session.user = { discordId: userSession.discordId };
     request.user = userSession;
+    console.log(request.session.user);
     try {
       return await this.sessionModel.findOneAndUpdate(
         { sessionId: request.sessionID },
@@ -28,19 +31,29 @@ export class SessionSerializer implements NestMiddleware {
     }
   }
 
+  async deleteSession(sessionId: string) {
+    const response = await this.sessionModel.deleteOne({ sessionId });
+    return response.acknowledged;
+  }
+
   async use(req: Request, res: Response, next: NextFunction) {
-    const sessionData = await this.sessionModel.findOne({
-      sessionId: req.sessionID,
-    });
+    const { DISCORD_SESSION } = req.cookies;
+    if (!DISCORD_SESSION) return next();
+    const sessionId = cookieParser.signedCookie(
+      DISCORD_SESSION,
+      process.env.COOKIE_SECRET,
+    );
+    if (!sessionId) return next();
+    const sessionData = await this.sessionModel.findOne({ sessionId });
     if (sessionData) {
       const currentDate = new Date();
       if (sessionData.expiresAt < currentDate) {
-        await this.sessionModel.deleteOne({
-          sessionId: req.sessionID,
-        });
+        await this.sessionModel.deleteOne({ sessionId });
       } else {
         const data = JSON.parse(sessionData.data);
+        data.tokens = decryptTokens(data.tokens);
         req.user = data;
+        req.sessionID = sessionId;
       }
     }
     next();

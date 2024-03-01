@@ -22,6 +22,8 @@ export class BotGuild extends BaseSchema {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: BotGuildOptions.name })
   options?: BotGuildOptions;
 }
+export type BotGuildCreateOptions = Omit<BotGuild, 'guildId'>;
+export type BotGuildUpdateOptions = Partial<BotGuildCreateOptions>;
 
 export const BotGuildSchema = SchemaFactory.createForClass(BotGuild);
 export const BotGuildOptionsSchema =

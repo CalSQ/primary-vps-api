@@ -1,10 +1,11 @@
 import { Request } from 'express';
 import { UserDoc } from 'src/schemas/User.schema';
-import { UserDetails } from 'src/user/types/user';
+import { UserDetails, UserSession } from 'src/user/types/user';
 
 export interface IAuthService {
   validateUser(userDetails: UserDetails): Promise<UserDoc>;
   authenticateUser(request: Request, accessCode: string);
+  revokeUser(sessionId: string, user: UserSession);
 }
 
 export interface OAuthTokens {
@@ -18,24 +19,4 @@ export interface OAuthCredentialsResponse {
   token_type: string;
   expires_in: number;
   scope: string;
-}
-
-export interface UserProfileResponse {
-  id: string;
-  username: string;
-  discriminator: string;
-  global_name?: string;
-  avatar?: string;
-  bot?: boolean;
-  system?: boolean;
-  mfa_enabled?: boolean;
-  banner?: string;
-  accent_color?: number;
-  locale?: string;
-  verified?: boolean;
-  email?: string;
-  flags?: number;
-  premium_type?: number;
-  public_flags?: number;
-  avatar_decoration?: string;
 }

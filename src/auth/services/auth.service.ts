@@ -6,16 +6,17 @@ import {
   encryptTokens,
   exchangeCodeForAccessToken,
   fetchUserProfile,
+  revokeUserAccessToken,
 } from '../utils/helpers';
 import { Request } from 'express';
-import { SessionSerializer } from './session.service';
-import { UserDetails } from 'src/user/types/user';
+import { SessionService } from './session.service';
+import { UserDetails, UserSession } from 'src/user/types/user';
 
 @Injectable()
 export class AuthService implements IAuthService {
   constructor(
-    @Inject(SERVICES.SERIALIZER)
-    private readonly sessionSerializer: SessionSerializer,
+    @Inject(SERVICES.SESSION)
+    private readonly sessionService: SessionService,
     @Inject(SERVICES.USER) private readonly userService: IUserService,
   ) {}
 
@@ -36,12 +37,21 @@ export class AuthService implements IAuthService {
       access_token: accessToken,
       refresh_token: refreshToken,
     } = oauthCredentials;
-    const { id: discordId } = await fetchUserProfile(accessToken, tokenType);
-    const tokens = encryptTokens(accessToken, refreshToken);
+    const { id: discordId, avatar } = await fetchUserProfile(
+      accessToken,
+      tokenType,
+    );
+    const tokens = encryptTokens({ accessToken, refreshToken });
     const userData = await this.validateUser({ discordId });
-    await this.sessionSerializer.serialize(request, {
+    await this.sessionService.serialize(request, {
       discordId: userData.discordId,
+      avatar,
       tokens,
     });
+  }
+
+  async revokeUser(sessionId: string, user: UserSession) {
+    const deletedSession = await this.sessionService.deleteSession(sessionId);
+    const revokedToken = await revokeUserAccessToken(user.tokens.accessToken);
   }
 }

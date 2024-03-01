@@ -10,4 +10,5 @@ export type PartialUserDetails = Omit<Partial<UserDetails>, 'discordId'>;
 
 export type UserSession = {
   tokens: OAuthTokens;
+  avatar: string;
 } & UserIdentifier;
